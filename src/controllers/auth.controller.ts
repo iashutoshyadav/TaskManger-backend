@@ -2,14 +2,15 @@ import { Request, Response, NextFunction } from "express";
 import { CookieOptions } from "express";
 import { RegisterDto, LoginDto } from "../dtos/auth.dto";
 import { registerUser, loginUser } from "../services/auth.services";
-import { env } from "../config/env";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { UserModel } from "../models/user.model";
 
 const cookieOptions: CookieOptions = {
   httpOnly: true,
-  secure: env.nodeEnv === "production",
-  sameSite: env.nodeEnv === "production" ? "none" : "lax",
+  secure: true,
+  sameSite: "none",
+  path: "/",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
 export const register = async (
@@ -57,6 +58,7 @@ export const login = async (
     next(error);
   }
 };
+
 export const getMe = async (req: AuthRequest, res: Response) => {
   const user = await UserModel.findById(req.userId).select(
     "_id name email"
@@ -70,12 +72,16 @@ export const getMe = async (req: AuthRequest, res: Response) => {
     user: {
       id: user._id,
       name: user.name,
-      email: user.email
-    }
+      email: user.email,
+    },
   });
 };
 
 export const logout = async (_req: Request, res: Response) => {
-  res.clearCookie("token", cookieOptions);
+  res.clearCookie("token", {
+    ...cookieOptions,
+    maxAge: 0,
+  });
+
   res.status(200).json({ message: "Logged out successfully" });
 };

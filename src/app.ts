@@ -12,6 +12,9 @@ import notificationRoutes from "./routes/notification.routes";
 
 const app = express();
 
+/* 🔥 REQUIRED FOR RENDER / HTTPS COOKIES */
+app.set("trust proxy", 1);
+
 app.use(
   cors({
     origin: env.clientUrl, // https://task-manger-kappa-orpin.vercel.app
@@ -36,6 +39,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/tasks", taskRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
+
 app.use(errorMiddleware);
 
 export default app;
