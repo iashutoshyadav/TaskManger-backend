@@ -52,13 +52,11 @@ export const getTasks = async (
   try {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 20;
-
-    // 👇 NEW: support summary page
     const all = req.query.all === "true";
 
     const tasks = all
       ? await taskService.fetchTasks({
-          userId: req.userId!, // 🔐 always user-scoped
+          userId: req.userId!,
         })
       : await taskService.fetchTasks({
           userId: req.userId!,
@@ -69,10 +67,10 @@ export const getTasks = async (
         });
 
     res.json({
-      data: tasks,            // ✅ frontend expects this
+      data: tasks,           
       page,
       limit,
-      total: tasks.length,    // OK for now (can optimize later)
+      total: tasks.length,   
     });
   } catch (error) {
     next(error);

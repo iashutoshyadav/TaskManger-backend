@@ -2,9 +2,6 @@ import { Response, NextFunction } from "express";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import * as notificationService from "../services/notificatiom.services";
 
-/**
- * Get all notifications for logged-in user
- */
 export const getMyNotifications = async (
   req: AuthRequest,
   res: Response,
@@ -30,9 +27,6 @@ export const getMyNotifications = async (
   }
 };
 
-/**
- * Get unread notifications for logged-in user
- */
 export const getMyUnreadNotifications = async (
   req: AuthRequest,
   res: Response,
@@ -58,9 +52,6 @@ export const getMyUnreadNotifications = async (
   }
 };
 
-/**
- * Mark a single notification as read
- */
 export const markNotificationAsRead = async (
   req: AuthRequest,
   res: Response,
@@ -79,9 +70,6 @@ export const markNotificationAsRead = async (
   }
 };
 
-/**
- * Mark all notifications as read
- */
 export const markAllNotificationsAsRead = async (
   req: AuthRequest,
   res: Response,

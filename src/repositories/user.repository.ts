@@ -20,13 +20,13 @@ export const findUserByEmail = async (
   if (withPassword) {
     query.select("+password");
   }
-  return query.exec(); // ✅ no lean
+  return query.exec();
 };
 
 export const findUserById = async (
   id: string
 ): Promise<IUser | null> => {
-  return UserModel.findById(id).exec(); // ✅ no lean
+  return UserModel.findById(id).exec();
 };
 
 type UpdateUserData = {
@@ -40,5 +40,5 @@ export const updateUserById = async (
   return UserModel.findByIdAndUpdate(id, data, {
     new: true,
     runValidators: true,
-  }).exec(); // ✅ no lean
+  }).exec();
 };
