@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 export enum TaskPriority {
   LOW = "LOW",
@@ -21,7 +21,7 @@ export interface ITask extends Document {
   priority: TaskPriority;
   status: TaskStatus;
   creatorId: mongoose.Types.ObjectId;
-  assignedToId: mongoose.Types.ObjectId | null ;
+  assignedToId: mongoose.Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,10 +31,13 @@ const TaskSchema = new Schema<ITask>(
     title: {
       type: String,
       required: true,
+      trim: true,
       maxlength: 100,
+    },
+    description: {
+      type: String,
       trim: true,
     },
-    description: String,
     dueDate: {
       type: Date,
       required: true,
@@ -42,7 +45,7 @@ const TaskSchema = new Schema<ITask>(
     priority: {
       type: String,
       enum: Object.values(TaskPriority),
-      default: TaskPriority.MEDIUM,
+      required: true,
     },
     status: {
       type: String,
@@ -58,22 +61,14 @@ const TaskSchema = new Schema<ITask>(
     assignedToId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      default:null,
-      required: true,
+      default: null,     // ✅ FIX
       index: true,
     },
   },
-  {
-    timestamps: true,
-    toJSON: {
-      virtuals: true,
-    },
-  }
+  { timestamps: true }
 );
 
-/** Performance indexes */
-TaskSchema.index({ dueDate: 1 });
-TaskSchema.index({ status: 1, priority: 1 });
-TaskSchema.index({ assignedToId: 1, status: 1 });
-
-export const TaskModel = mongoose.model<ITask>("Task", TaskSchema);
+export const TaskModel = mongoose.model<ITask>(
+  "Task",
+  TaskSchema
+);

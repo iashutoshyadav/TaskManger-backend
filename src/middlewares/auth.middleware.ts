@@ -16,14 +16,22 @@ export const authMiddleware = (
       req.headers.authorization?.split(" ")[1];
 
     if (!token) {
-      throw new Error("Unauthorized");
+      const err: any = new Error("Unauthorized");
+      err.status = 401;
+      throw err;
     }
 
     const payload = verifyToken(token);
-    req.userId = payload.userId;
 
+    if (!payload?.userId) {
+      const err: any = new Error("Invalid token");
+      err.status = 401;
+      throw err;
+    }
+
+    req.userId = payload.userId;
     next();
-  } catch {
-    next(new Error("Unauthorized"));
+  } catch (error) {
+    next(error); // 🔥 VERY IMPORTANT
   }
 };

@@ -12,46 +12,44 @@ type AuthResponse = {
 export const registerUser = async (
   input: RegisterInput
 ): Promise<AuthResponse> => {
-  const existingUser = await findUserByEmail(input.email);
-  if (existingUser) {
-    throw new Error("Email already in use");
+  const existing = await findUserByEmail(input.email);
+  if (existing) {
+    const err: any = new Error("Email already exists");
+    err.status = 409;
+    throw err;
   }
 
-  const hashedPassword = await hashPassword(input.password);
+  const hashed = await hashPassword(input.password);
+  const user = await createUser({ ...input, password: hashed });
 
-  const user = await createUser({
-    name: input.name,
-    email: input.email,
-    password: hashedPassword,
-  });
+  const token = signToken(user._id.toString());
 
-  const token = signToken({ userId: user._id.toString() });
+  const obj = user.toObject();
+  delete obj.password;
 
-  const userObj = user.toObject();
-  delete userObj.password;
-
-  return { user: userObj, token };
+  return { user: obj, token };
 };
 
 export const loginUser = async (
   input: LoginInput
 ): Promise<AuthResponse> => {
   const user = await findUserByEmail(input.email, true);
-
   if (!user || !user.password) {
-    throw new Error("Invalid email or password");
+    const err: any = new Error("Invalid credentials");
+    err.status = 401;
+    throw err;
   }
 
-  const isMatch = await comparePassword(input.password, user.password);
-  if (!isMatch) {
-    throw new Error("Invalid email or password");
+  const ok = await comparePassword(input.password, user.password);
+  if (!ok) {
+    const err: any = new Error("Invalid credentials");
+    err.status = 401;
+    throw err;
   }
 
-  const token = signToken({ userId: user._id.toString() });
+  const token = signToken(user._id.toString());
+  const obj = user.toObject();
+  delete obj.password;
 
-  // ✅ FIX: no toObject()
-  const { password, ...safeUser } = user;
-
-  return { user: safeUser as Omit<IUser, "password">, token };
+  return { user: obj, token };
 };
-

@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-export interface INotification extends Document{
+export interface INotification extends Document {
   receiverId: mongoose.Types.ObjectId;
   taskId: mongoose.Types.ObjectId;
   message: string;
@@ -34,12 +34,7 @@ const NotificationSchema = new Schema<INotification>(
       index: true,
     },
   },
-  {
-    timestamps: true,
-    toJSON: {
-      virtuals: true,
-    },
-  }
+  { timestamps: true }
 );
 
 NotificationSchema.index({ receiverId: 1, isRead: 1, createdAt: -1 });

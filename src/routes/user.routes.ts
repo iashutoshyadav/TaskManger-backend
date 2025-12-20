@@ -5,7 +5,6 @@ import { getMe, updateMe } from "../controllers/user.controller";
 const router = Router();
 
 router.use(authMiddleware);
-
 router.get("/me", getMe);
 router.put("/me", updateMe);
 

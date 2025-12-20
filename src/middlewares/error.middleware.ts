@@ -9,9 +9,12 @@ export const errorMiddleware = (
   res: Response,
   _next: NextFunction
 ) => {
-  let statusCode = 500;
+  let statusCode = err.status || 500;
   let message = "Internal Server Error";
 
+  /* ======================
+     ZOD VALIDATION
+  ====================== */
   if (err instanceof ZodError) {
     return res.status(400).json({
       message: "Validation failed",
@@ -22,22 +25,55 @@ export const errorMiddleware = (
     });
   }
 
+  /* ======================
+     MONGOOSE VALIDATION
+  ====================== */
+  if (err instanceof mongoose.Error.ValidationError) {
+    return res.status(400).json({
+      message: "Validation failed",
+      errors: Object.values(err.errors).map((e: any) => ({
+        field: e.path,
+        message: e.message,
+      })),
+    });
+  }
+
+  /* ======================
+     INVALID OBJECT ID
+  ====================== */
   if (err instanceof mongoose.Error.CastError) {
     statusCode = 400;
     message = "Invalid ID format";
   }
 
+  /* ======================
+     DUPLICATE KEY
+  ====================== */
   if (err?.code === 11000) {
     statusCode = 409;
     const field = Object.keys(err.keyValue)[0];
     message = `${field} already exists`;
   }
 
+  /* ======================
+     AUTH
+  ====================== */
   if (err.message === "Unauthorized") {
     statusCode = 401;
     message = "Unauthorized access";
   }
 
+  /* ======================
+     FORBIDDEN ✅ FIX
+  ====================== */
+  if (err.message === "Forbidden") {
+    statusCode = 403;
+    message = "You do not have permission to perform this action";
+  }
+
+  /* ======================
+     NOT FOUND
+  ====================== */
   if (
     ["Task not found", "User not found", "Notification not found"].includes(
       err.message
@@ -47,6 +83,9 @@ export const errorMiddleware = (
     message = err.message;
   }
 
+  /* ======================
+     BAD REQUEST
+  ====================== */
   if (
     [
       "Due date cannot be in the past",
@@ -61,6 +100,9 @@ export const errorMiddleware = (
     message = err.message;
   }
 
+  /* ======================
+     LOGGING
+  ====================== */
   logger.error(err.message, {
     statusCode,
     stack: err.stack,
@@ -73,3 +115,4 @@ export const errorMiddleware = (
     }),
   });
 };
+

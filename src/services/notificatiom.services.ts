@@ -1,117 +1,106 @@
 import mongoose from "mongoose";
-import * as notificationRepo from "../repositories/notification.repository";
+import * as repo from "../repositories/notification.repository";
 import { getIO } from "../config/socket";
 import { INotification } from "../models/notification.model";
 
-/**
- * Create notification when a task is assigned
- */
+/* ===========================
+   CREATE (TASK ASSIGNMENT)
+=========================== */
 export const notifyTaskAssignment = async (
   receiverId: string,
   taskId: string,
   taskTitle: string
 ): Promise<INotification> => {
-  if (!mongoose.Types.ObjectId.isValid(receiverId)) {
-    throw new Error("Invalid receiver ID");
+  if (
+    !mongoose.Types.ObjectId.isValid(receiverId) ||
+    !mongoose.Types.ObjectId.isValid(taskId)
+  ) {
+    const err: any = new Error("Invalid ID");
+    err.status = 400;
+    throw err;
   }
 
-  if (!mongoose.Types.ObjectId.isValid(taskId)) {
-    throw new Error("Invalid task ID");
-  }
-
-  const message = `You have been assigned a new task: "${taskTitle}"`;
-
-  const notification = await notificationRepo.createNotification({
+  const notification = await repo.createNotification({
     receiverId: new mongoose.Types.ObjectId(receiverId),
     taskId: new mongoose.Types.ObjectId(taskId),
-    message,
+    message: `You have been assigned a new task: "${taskTitle}"`,
   });
 
-  const io = getIO();
-
-  // Consistent real-time event
-  io.to(receiverId).emit("notification:new", {
+  getIO().to(receiverId).emit("notification:new", {
     id: notification._id,
     taskId,
-    message,
+    message: notification.message,
     createdAt: notification.createdAt,
   });
 
   return notification;
 };
 
-/**
- * Get all notifications for a user (paginated)
- */
+/* ===========================
+   GET NOTIFICATIONS
+=========================== */
 export const getUserNotifications = async (
   userId: string,
-  page = 1,
-  limit = 10
-): Promise<INotification[]> => {
+  page: number,
+  limit: number
+) => {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
-    throw new Error("Invalid user ID");
+    const err: any = new Error("Invalid user ID");
+    err.status = 400;
+    throw err;
   }
 
-  return notificationRepo.getNotificationsByUser(
-    userId,
-    page,
-    limit
-  );
+  return repo.getNotificationsByUser(userId, page, limit);
 };
 
-/**
- * Get unread notifications for a user (paginated)
- */
 export const getUnreadUserNotifications = async (
   userId: string,
-  page = 1,
-  limit = 10
-): Promise<INotification[]> => {
+  page: number,
+  limit: number
+) => {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
-    throw new Error("Invalid user ID");
+    const err: any = new Error("Invalid user ID");
+    err.status = 400;
+    throw err;
   }
 
-  return notificationRepo.getUnreadNotificationsByUser(
-    userId,
-    page,
-    limit
-  );
+  return repo.getUnreadNotificationsByUser(userId, page, limit);
 };
 
-/**
- * Mark a single notification as read
- */
+/* ===========================
+   MARK READ
+=========================== */
 export const markNotificationRead = async (
   notificationId: string,
   userId: string
 ): Promise<INotification> => {
-  if (!mongoose.Types.ObjectId.isValid(notificationId)) {
-    throw new Error("Invalid notification ID");
-  }
-
-  const notification =
-    await notificationRepo.markNotificationAsRead(notificationId);
+  const notification = await repo.findNotificationById(notificationId);
 
   if (!notification) {
-    throw new Error("Notification not found");
+    const err: any = new Error("Notification not found");
+    err.status = 404;
+    throw err;
   }
 
   if (notification.receiverId.toString() !== userId) {
-    throw new Error("Unauthorized to update this notification");
+    const err: any = new Error("Forbidden");
+    err.status = 403;
+    throw err;
   }
 
-  return notification;
+  return (await repo.markNotificationAsRead(
+    notificationId
+  ))!;
 };
 
-/**
- * Mark all notifications as read for a user
- */
 export const markAllNotificationsRead = async (
   userId: string
 ): Promise<void> => {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
-    throw new Error("Invalid user ID");
+    const err: any = new Error("Invalid user ID");
+    err.status = 400;
+    throw err;
   }
 
-  await notificationRepo.markAllNotificationsAsRead(userId);
+  await repo.markAllNotificationsAsRead(userId);
 };

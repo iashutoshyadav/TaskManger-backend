@@ -1,124 +1,45 @@
 import mongoose from "mongoose";
 import {
   TaskModel,
-  ITask,
-  TaskPriority,
   TaskStatus,
+  TaskPriority,
 } from "../models/task.model";
 
-/* ================================
-   TYPES
-================================ */
+export const createTask = (data: any) =>
+  TaskModel.create(data);
 
-type CreateTaskData = {
-  title: string;
-  description?: string;
-  dueDate: Date;
-  priority: TaskPriority;
-  creatorId: mongoose.Types.ObjectId;
-  assignedToId?: mongoose.Types.ObjectId | null; // ✅ FIX
-  status?: TaskStatus;
-};
-
-type UpdateTaskData = {
-  title?: string;
-  description?: string;
-  dueDate?: Date;
-  priority?: TaskPriority;
-  status?: TaskStatus;
-  assignedToId?: mongoose.Types.ObjectId | null; // ✅ FIX
-};
-
-type FindTasksForUserParams = {
-  userId: string;
-  page?: number;
-  limit?: number;
-  status?: TaskStatus;
-  priority?: TaskPriority;
-};
-
-/* ================================
-   CREATE
-================================ */
-
-export const createTask = async (
-  data: CreateTaskData
-): Promise<ITask> => {
-  return TaskModel.create({
-    ...data,
-    status: data.status ?? TaskStatus.TODO,
-  });
-};
-
-/* ================================
-   READ SINGLE
-================================ */
-
-export const getTaskById = async (
-  id: string
-): Promise<ITask | null> => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return null;
-  }
-
-  return TaskModel.findById(id)
+export const getTaskById = (id: string) =>
+  TaskModel.findById(id)
     .populate("creatorId", "_id name email")
     .populate("assignedToId", "_id name email")
-    .lean()
     .exec();
-};
 
-/* ================================
-   UPDATE
-================================ */
-
-export const updateTaskById = async (
-  id: string,
-  data: Partial<UpdateTaskData>
-): Promise<ITask | null> => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return null;
-  }
-
-  return TaskModel.findByIdAndUpdate(id, data, {
+export const updateTaskById = (id: string, data: any) =>
+  TaskModel.findByIdAndUpdate(id, data, {
     new: true,
     runValidators: true,
   })
     .populate("creatorId", "_id name email")
     .populate("assignedToId", "_id name email")
-    .lean()
     .exec();
-};
 
-/* ================================
-   DELETE
-================================ */
+export const deleteTaskById = (id: string) =>
+  TaskModel.findByIdAndDelete(id).exec();
 
-export const deleteTaskById = async (
-  id: string
-): Promise<ITask | null> => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return null;
-  }
-
-  return TaskModel.findByIdAndDelete(id)
-    .lean()
-    .exec();
-};
-
-/* ================================
-   READ (LIST FOR USER)
-================================ */
-
+/* ✅ PAGINATED + COUNT */
 export const findTasksForUser = async ({
   userId,
-  page = 1,
-  limit = 10,
   status,
   priority,
-}: FindTasksForUserParams): Promise<ITask[]> => {
-  const skip = (page - 1) * limit;
-
+  page = 1,
+  limit = 20,
+}: {
+  userId: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  page?: number;
+  limit?: number;
+}) => {
   const filters: any = {
     $or: [
       { creatorId: new mongoose.Types.ObjectId(userId) },
@@ -129,34 +50,17 @@ export const findTasksForUser = async ({
   if (status) filters.status = status;
   if (priority) filters.priority = priority;
 
-  return TaskModel.find(filters)
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .populate("creatorId", "_id name email")
-    .populate("assignedToId", "_id name email")
-    .lean()
-    .exec();
-};
+  const [tasks, total] = await Promise.all([
+    TaskModel.find(filters)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate("creatorId", "_id name email")
+      .populate("assignedToId", "_id name email")
+      .lean()
+      .exec(),
+    TaskModel.countDocuments(filters),
+  ]);
 
-/* ================================
-   COUNT (OPTIONAL)
-================================ */
-
-export const countTasksForUser = async (
-  userId: string,
-  status?: TaskStatus,
-  priority?: TaskPriority
-): Promise<number> => {
-  const filters: any = {
-    $or: [
-      { creatorId: new mongoose.Types.ObjectId(userId) },
-      { assignedToId: new mongoose.Types.ObjectId(userId) },
-    ],
-  };
-
-  if (status) filters.status = status;
-  if (priority) filters.priority = priority;
-
-  return TaskModel.countDocuments(filters);
+  return { tasks, total };
 };

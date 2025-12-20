@@ -17,9 +17,7 @@ export const findUserByEmail = async (
   withPassword = false
 ): Promise<IUser | null> => {
   const query = UserModel.findOne({ email });
-  if (withPassword) {
-    query.select("+password");
-  }
+  if (withPassword) query.select("+password");
   return query.exec();
 };
 
@@ -29,13 +27,9 @@ export const findUserById = async (
   return UserModel.findById(id).exec();
 };
 
-type UpdateUserData = {
-  name?: string;
-};
-
 export const updateUserById = async (
   id: string,
-  data: UpdateUserData
+  data: Partial<Pick<IUser, "name">>
 ): Promise<IUser | null> => {
   return UserModel.findByIdAndUpdate(id, data, {
     new: true,

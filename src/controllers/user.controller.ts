@@ -9,11 +9,9 @@ export const getMe = async (
   next: NextFunction
 ) => {
   try {
-    const user = await userService.getProfile(
-      req.userId!
-    );
+    const user = await userService.getProfile(req.userId!);
 
-    res.json({
+    res.status(200).json({
       user: {
         id: user._id,
         name: user.name,
@@ -34,12 +32,13 @@ export const updateMe = async (
 ) => {
   try {
     const data = UpdateUserProfileDto.parse(req.body);
+
     const user = await userService.updateProfile(
       req.userId!,
       data
     );
 
-    res.json({
+    res.status(200).json({
       user: {
         id: user._id,
         name: user.name,

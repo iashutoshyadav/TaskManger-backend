@@ -1,64 +1,73 @@
 import mongoose from "mongoose";
 import { NotificationModel, INotification } from "../models/notification.model";
 
-type CreateNotificationData = {
-  receiverId: mongoose.Types.ObjectId;
-  taskId: mongoose.Types.ObjectId;
-  message: string;
-  isRead?:boolean;
-};
-
 export const createNotification = async (
-  data: CreateNotificationData
+  data: {
+    receiverId: mongoose.Types.ObjectId;
+    taskId: mongoose.Types.ObjectId;
+    message: string;
+  }
 ): Promise<INotification> => {
   return NotificationModel.create(data);
 };
 
 export const getNotificationsByUser = async (
   receiverId: string,
-  page = 1,
-  limit = 10
-): Promise<INotification[]> => {
+  page: number,
+  limit: number
+) => {
   const skip = (page - 1) * limit;
 
-  return NotificationModel.find({ receiverId })
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .populate("taskId", "title status priority")
-    .lean()
-    .exec();
+  const [notifications, total] = await Promise.all([
+    NotificationModel.find({ receiverId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("taskId", "title status priority")
+      .exec(),
+    NotificationModel.countDocuments({ receiverId }),
+  ]);
+
+  return { notifications, total };
 };
 
 export const getUnreadNotificationsByUser = async (
   receiverId: string,
-  page = 1,
-  limit = 10
-): Promise<INotification[]> => {
+  page: number,
+  limit: number
+) => {
   const skip = (page - 1) * limit;
 
-  return NotificationModel.find({
-    receiverId,
-    isRead: false,
-  })
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .populate("taskId", "title status priority")
-    .lean()
-    .exec();
+  const [notifications, total] = await Promise.all([
+    NotificationModel.find({ receiverId, isRead: false })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("taskId", "title status priority")
+      .exec(),
+    NotificationModel.countDocuments({
+      receiverId,
+      isRead: false,
+    }),
+  ]);
+
+  return { notifications, total };
+};
+
+export const findNotificationById = async (
+  id: string
+): Promise<INotification | null> => {
+  return NotificationModel.findById(id).exec();
 };
 
 export const markNotificationAsRead = async (
-  notificationId: string
+  id: string
 ): Promise<INotification | null> => {
   return NotificationModel.findByIdAndUpdate(
-    notificationId,
+    id,
     { isRead: true },
     { new: true }
-  )
-    .lean()
-    .exec();
+  ).exec();
 };
 
 export const markAllNotificationsAsRead = async (
@@ -67,5 +76,5 @@ export const markAllNotificationsAsRead = async (
   await NotificationModel.updateMany(
     { receiverId, isRead: false },
     { isRead: true }
-  ).exec();
+  );
 };

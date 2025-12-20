@@ -2,24 +2,28 @@ import { Response, NextFunction } from "express";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import * as notificationService from "../services/notificatiom.services";
 
+/* ===========================
+   GET ALL NOTIFICATIONS
+=========================== */
 export const getMyNotifications = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.userId!;
-    const { page = 1, limit = 10 } = req.query;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
 
-    const notifications =
+    const { notifications, total } =
       await notificationService.getUserNotifications(
-        userId,
-        Number(page),
-        Number(limit)
+        req.userId!,
+        page,
+        limit
       );
 
     res.status(200).json({
-      count: notifications.length,
+      total,
+      count: notifications.length, // ✅ OK now
       notifications,
     });
   } catch (error) {
@@ -27,24 +31,28 @@ export const getMyNotifications = async (
   }
 };
 
+/* ===========================
+   GET UNREAD NOTIFICATIONS
+=========================== */
 export const getMyUnreadNotifications = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.userId!;
-    const { page = 1, limit = 10 } = req.query;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
 
-    const notifications =
+    const { notifications, total } =
       await notificationService.getUnreadUserNotifications(
-        userId,
-        Number(page),
-        Number(limit)
+        req.userId!,
+        page,
+        limit
       );
 
     res.status(200).json({
-      count: notifications.length,
+      total,
+      count: notifications.length, // ✅ OK now
       notifications,
     });
   } catch (error) {
@@ -52,17 +60,20 @@ export const getMyUnreadNotifications = async (
   }
 };
 
+/* ===========================
+   MARK ONE AS READ
+=========================== */
 export const markNotificationAsRead = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.userId!;
-    const { id } = req.params;
-
     const notification =
-      await notificationService.markNotificationRead(id, userId);
+      await notificationService.markNotificationRead(
+        req.params.id,
+        req.userId!
+      );
 
     res.status(200).json(notification);
   } catch (error) {
@@ -70,15 +81,18 @@ export const markNotificationAsRead = async (
   }
 };
 
+/* ===========================
+   MARK ALL AS READ
+=========================== */
 export const markAllNotificationsAsRead = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.userId!;
-
-    await notificationService.markAllNotificationsRead(userId);
+    await notificationService.markAllNotificationsRead(
+      req.userId!
+    );
 
     res.status(200).json({
       message: "All notifications marked as read",

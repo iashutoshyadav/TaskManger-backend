@@ -9,9 +9,6 @@ import {
 
 const router = Router();
 
-/**
- * All notification routes are protected
- */
 router.use(authMiddleware);
 
 router.get("/", getMyNotifications);

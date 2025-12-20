@@ -10,12 +10,16 @@ export const getProfile = async (
   userId: string
 ): Promise<IUser> => {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
-    throw new Error("Invalid user ID");
+    const err: any = new Error("Invalid user ID");
+    err.status = 400;
+    throw err;
   }
 
   const user = await findUserById(userId);
   if (!user) {
-    throw new Error("User not found");
+    const err: any = new Error("User not found");
+    err.status = 404;
+    throw err;
   }
 
   return user;
@@ -26,11 +30,15 @@ export const updateProfile = async (
   input: UpdateUserProfileInput
 ): Promise<IUser> => {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
-    throw new Error("Invalid user ID");
+    const err: any = new Error("Invalid user ID");
+    err.status = 400;
+    throw err;
   }
 
   if (!input.name) {
-    throw new Error("No valid fields to update");
+    const err: any = new Error("No fields to update");
+    err.status = 400;
+    throw err;
   }
 
   const user = await updateUserById(userId, {
@@ -38,7 +46,9 @@ export const updateProfile = async (
   });
 
   if (!user) {
-    throw new Error("User not found");
+    const err: any = new Error("User not found");
+    err.status = 404;
+    throw err;
   }
 
   return user;

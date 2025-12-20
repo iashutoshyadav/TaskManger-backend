@@ -3,7 +3,7 @@ import { z } from "zod";
 export const RegisterDto = z.object({
   name: z.string().trim().min(2).max(50),
   email: z.string().trim().email(),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(8),
 });
 
 export const LoginDto = z.object({
