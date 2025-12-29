@@ -7,6 +7,9 @@ import { registerSocketHandlers } from "./socket";
 import { logger } from "./utils/logger";
 
 const startServer = async () => {
+
+  console.log("NODE_ENV:", env.nodeEnv);
+
   try {
     await connectDB();
 
